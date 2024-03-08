@@ -1,0 +1,10 @@
+[package]
+name = "qsh"
+version = "24.0.0"
+edition = "2021"
+
+[dependencies]
+chrono = "0.4"
+clap = { version = "4.5", features = ["derive"] }
+qsh-rs = { git = "https://github.com/2dav/qsh-rs.git" }
+rust_decimal = "1.34"
