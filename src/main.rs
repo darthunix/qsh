@@ -121,6 +121,7 @@ mod tests {
     use super::*;
     use std::fs::File;
     use std::io::{self, BufRead};
+    use std::path::Path;
 
     fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
     where
@@ -128,44 +129,6 @@ mod tests {
     {
         let file = File::open(filename)?;
         Ok(io::BufReader::new(file).lines())
-    }
-    use std::path::Path;
-
-    struct DealRowWithoutFtd {
-        exchange: DateTime<Utc>,
-        deal_id: i64,
-        side: Operation,
-        price: Decimal,
-        amount: i64,
-        oi: i64,
-    }
-
-    impl From<DealRow> for DealRowWithoutFtd {
-        fn from(deal_row: DealRow) -> Self {
-            Self {
-                exchange: deal_row.exchange,
-                deal_id: deal_row.deal_id,
-                side: deal_row.side,
-                price: deal_row.price,
-                amount: deal_row.amount,
-                oi: deal_row.oi,
-            }
-        }
-    }
-
-    impl DealRowWithoutFtd {
-        fn as_csv(&self, delim: &str) -> String {
-            format!(
-                "{}{delim}{}{delim}{}{delim}{}{delim}{}{delim}{}",
-                self.exchange.format("%d.%m.%Y %H:%M:%S%.3f"),
-                self.deal_id,
-                self.side,
-                self.price,
-                self.amount,
-                self.oi,
-                delim = delim
-            )
-        }
     }
 
     #[test]
@@ -179,10 +142,15 @@ mod tests {
         let mut qsh_iter = parser.into_iter::<DealReader>();
 
         if let Ok(lines) = read_lines("data/SBER.2024-02-20.Deals.txt") {
+            let d = ";";
             for line in lines.flatten() {
-                let expected: String = line.split(";").skip(1).collect::<Vec<_>>().join(";");
-                let actual: String =
-                    DealRowWithoutFtd::from(DealRow::new(&qsh_iter.next().unwrap())).as_csv(";");
+                let expected: String = line.split(d).skip(1).collect::<Vec<_>>().join(d);
+                let actual: String = DealRow::new(&qsh_iter.next().unwrap())
+                    .as_csv(d)
+                    .split(d)
+                    .skip(1)
+                    .collect::<Vec<_>>()
+                    .join(d);
                 assert_eq!(expected, actual);
             }
         }
